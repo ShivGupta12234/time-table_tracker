@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Radhe Radhe — Daily Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --saffron: #FF6B00;
+    --saffron-light: #FFE0C7;
+    --saffron-glow: rgba(255,107,0,0.18);
+    --gold: #FFB800;
+    --gold-light: #FFF3CC;
+    --deep: #1A0A00;
+    --deep2: #2D1200;
+    --surface: #FFF8F3;
+    --card: #FFFCFA;
+    --muted: #8A6040;
+    --green: #22A66B;
+    --green-light: #D4F5E5;
+    --border: rgba(255,107,0,0.15);
+    --radius: 16px;
+    --radius-sm: 10px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Syne', sans-serif;
+    background: var(--surface);
+    color: var(--deep);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* PARTICLES */
+  #particles { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999; }
+
+  .particle {
+    position: absolute;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    animation: floatUp 1.2s ease-out forwards;
+    pointer-events: none;
+  }
+  @keyframes floatUp {
+    0% { transform: translateY(0) scale(1); opacity: 1; }
+    100% { transform: translateY(-120px) scale(0); opacity: 0; }
+  }
+
+  /* HEADER */
+  header {
+    background: linear-gradient(135deg, var(--deep) 0%, var(--deep2) 100%);
+    padding: 28px 24px 20px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  header::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 50% 0%, rgba(255,107,0,0.25) 0%, transparent 70%);
+  }
+  .radhe-banner {
+    font-size: 11px; letter-spacing: 4px; color: var(--saffron);
+    text-transform: uppercase; margin-bottom: 8px; opacity: 0.85;
+  }
+  header h1 {
+    font-size: 28px; font-weight: 800; color: #fff;
+    letter-spacing: -0.5px; position: relative;
+  }
+  header h1 span { color: var(--gold); }
+  .tagline { font-size: 12px; color: rgba(255,255,255,0.45); margin-top: 4px; letter-spacing: 1px; }
+
+  /* STATS BAR */
+  .stats-bar {
+    display: flex; gap: 12px; padding: 16px 20px;
+    background: var(--deep2);
+    overflow-x: auto; scrollbar-width: none;
+  }
+  .stats-bar::-webkit-scrollbar { display: none; }
+  .stat-pill {
+    display: flex; align-items: center; gap: 8px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,107,0,0.2);
+    border-radius: 100px; padding: 8px 16px;
+    white-space: nowrap; flex-shrink: 0;
+  }
+  .stat-pill .icon { font-size: 16px; }
+  .stat-pill .label { font-size: 11px; color: rgba(255,255,255,0.5); margin-right: 2px; }
+  .stat-pill .value { font-size: 14px; font-weight: 700; color: #fff; font-family: 'JetBrains Mono', monospace; }
+  .stat-pill .value.gold { color: var(--gold); }
+  .stat-pill .value.saffron { color: var(--saffron); }
+  .stat-pill .value.green { color: #4CD99A; }
+
+  /* XP BAR */
+  .xp-section { padding: 14px 20px 0; background: var(--deep2); }
+  .xp-label { display: flex; justify-content: space-between; font-size: 11px; color: rgba(255,255,255,0.4); margin-bottom: 6px; }
+  .xp-track {
+    height: 6px; background: rgba(255,255,255,0.08);
+    border-radius: 100px; overflow: hidden; margin-bottom: 16px;
+  }
+  .xp-fill {
+    height: 100%; background: linear-gradient(90deg, var(--saffron), var(--gold));
+    border-radius: 100px; transition: width 0.6s cubic-bezier(0.34,1.56,0.64,1);
+  }
+
+  /* DAY SWITCHER */
+  .day-switcher {
+    display: flex; gap: 8px; padding: 16px 20px 8px;
+    overflow-x: auto; scrollbar-width: none;
+  }
+  .day-switcher::-webkit-scrollbar { display: none; }
+  .day-btn {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 10px 14px; border-radius: var(--radius-sm);
+    border: 1.5px solid var(--border); background: var(--card);
+    cursor: pointer; flex-shrink: 0; transition: all 0.18s;
+    font-family: 'Syne', sans-serif;
+  }
+  .day-btn:hover { border-color: var(--saffron); transform: translateY(-2px); }
+  .day-btn.active {
+    background: var(--deep); border-color: var(--saffron);
+    box-shadow: 0 4px 16px var(--saffron-glow);
+  }
+  .day-btn .day-name { font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: 1px; }
+  .day-btn .day-num { font-size: 18px; font-weight: 800; color: var(--deep); margin-top: 2px; }
+  .day-btn.active .day-name { color: var(--saffron); }
+  .day-btn.active .day-num { color: #fff; }
+  .day-btn .day-dot { width: 5px; height: 5px; border-radius: 50%; margin-top: 4px; background: transparent; }
+  .day-btn.has-progress .day-dot { background: var(--saffron); }
+  .day-btn.complete .day-dot { background: var(--green); }
+
+  /* MAIN CONTENT */
+  .main { padding: 12px 16px 100px; }
+
+  /* DATE HEADING */
+  .day-heading {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px; padding: 0 4px;
+  }
+  .day-heading h2 { font-size: 20px; font-weight: 800; color: var(--deep); }
+  .day-heading .schedule-type {
+    font-size: 11px; font-weight: 600; letter-spacing: 1.5px;
+    padding: 4px 12px; border-radius: 100px;
+    background: var(--saffron-light); color: var(--saffron);
+  }
+
+  /* PROGRESS RING */
+  .progress-ring-wrap {
+    display: flex; align-items: center; gap: 16px;
+    background: var(--deep); border-radius: var(--radius);
+    padding: 16px 20px; margin-bottom: 16px;
+  }
+  .ring-svg { width: 64px; height: 64px; flex-shrink: 0; transform: rotate(-90deg); }
+  .ring-bg { fill: none; stroke: rgba(255,255,255,0.1); stroke-width: 5; }
+  .ring-fill { fill: none; stroke-width: 5; stroke-linecap: round; stroke: var(--saffron);
+    transition: stroke-dashoffset 0.6s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  .ring-text { text-anchor: middle; dominant-baseline: central;
+    fill: #fff; font-family: 'JetBrains Mono', monospace; font-weight: 600;
+    font-size: 13px; transform: rotate(90deg); transform-origin: center;
+  }
+  .ring-info h3 { font-size: 15px; font-weight: 700; color: #fff; }
+  .ring-info p { font-size: 12px; color: rgba(255,255,255,0.45); margin-top: 2px; }
+  .ring-info .completed-count { font-size: 22px; font-weight: 800; color: var(--gold); }
+
+  /* TASK CARDS */
+  .time-block { margin-bottom: 8px; }
+
+  .task-card {
+    display: flex; align-items: flex-start; gap: 14px;
+    background: var(--card); border: 1.5px solid var(--border);
+    border-radius: var(--radius); padding: 14px 16px;
+    cursor: pointer; transition: all 0.2s; position: relative;
+    overflow: hidden;
+  }
+  .task-card::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+    width: 3px; border-radius: 3px 0 0 3px;
+    transition: all 0.3s;
+  }
+  .task-card.cat-learn::before { background: var(--saffron); }
+  .task-card.cat-practice::before { background: var(--gold); }
+  .task-card.cat-wellness::before { background: #22A66B; }
+  .task-card.cat-rest::before { background: #8B7CF6; }
+  .task-card.cat-prayer::before { background: #EC6C9E; }
+
+  .task-card:hover:not(.done) {
+    border-color: var(--saffron); transform: translateX(2px);
+    box-shadow: 0 4px 20px var(--saffron-glow);
+  }
+  .task-card.done {
+    background: #F2FBF7; border-color: rgba(34,166,107,0.3);
+  }
+  .task-card.done::before { background: var(--green) !important; }
+
+  /* Checkbox */
+  .task-check {
+    width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0;
+    border: 2px solid rgba(255,107,0,0.3); display: flex; align-items: center;
+    justify-content: center; margin-top: 1px; transition: all 0.25s;
+    background: transparent;
+  }
+  .task-card.done .task-check {
+    background: var(--green); border-color: var(--green);
+  }
+  .task-check .check-icon {
+    display: none; color: #fff; font-size: 14px; font-weight: 800;
+  }
+  .task-card.done .check-icon { display: block; }
+
+  /* Task body */
+  .task-body { flex: 1; min-width: 0; }
+  .task-time {
+    font-size: 10px; font-family: 'JetBrains Mono', monospace;
+    color: var(--muted); letter-spacing: 0.5px; margin-bottom: 3px;
+  }
+  .task-name {
+    font-size: 14px; font-weight: 700; color: var(--deep);
+    line-height: 1.3;
+  }
+  .task-card.done .task-name {
+    text-decoration: line-through; color: var(--muted);
+  }
+  .task-tag {
+    display: inline-block; font-size: 10px; font-weight: 600;
+    letter-spacing: 0.8px; padding: 2px 8px; border-radius: 100px;
+    margin-top: 5px; text-transform: uppercase;
+  }
+  .tag-learn { background: var(--saffron-light); color: var(--saffron); }
+  .tag-practice { background: var(--gold-light); color: #8A5A00; }
+  .tag-wellness { background: var(--green-light); color: #0D6B42; }
+  .tag-rest { background: #EDE9FE; color: #5B21B6; }
+  .tag-prayer { background: #FDE7EF; color: #9B1E57; }
+
+  /* XP badge */
+  .task-xp {
+    font-size: 11px; font-weight: 700; color: var(--gold);
+    font-family: 'JetBrains Mono', monospace;
+    background: var(--gold-light); padding: 3px 8px; border-radius: 100px;
+    flex-shrink: 0; align-self: center;
+  }
+  .task-card.done .task-xp { opacity: 0.4; }
+
+  /* CELEBRATION TOAST */
+  .toast {
+    position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--deep); color: #fff; padding: 14px 24px;
+    border-radius: 100px; font-size: 14px; font-weight: 700;
+    border: 1px solid var(--saffron); box-shadow: 0 8px 32px var(--saffron-glow);
+    opacity: 0; transition: all 0.35s cubic-bezier(0.34,1.56,0.64,1);
+    white-space: nowrap; z-index: 9998; pointer-events: none;
+    max-width: 90vw; text-align: center;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* STREAK FIRE */
+  .streak-fire { animation: pulse 1.5s infinite; display: inline-block; }
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+  }
+
+  /* MOTIVATIONAL QUOTE */
+  .quote-card {
+    background: linear-gradient(135deg, var(--deep) 0%, var(--deep2) 100%);
+    border-radius: var(--radius); padding: 18px 20px; margin-bottom: 14px;
+    border: 1px solid rgba(255,107,0,0.2);
+    position: relative; overflow: hidden;
+  }
+  .quote-card::after {
+    content: '🕉'; position: absolute; right: 16px; top: 50%;
+    transform: translateY(-50%); font-size: 40px; opacity: 0.12;
+  }
+  .quote-card blockquote {
+    font-size: 13px; line-height: 1.7; color: rgba(255,255,255,0.8);
+    font-style: italic;
+  }
+  .quote-card cite {
+    font-size: 11px; color: var(--saffron); margin-top: 6px;
+    display: block; font-style: normal; font-weight: 600; letter-spacing: 1px;
+  }
+
+  /* BOTTOM NAV SPACER */
+  .bottom-spacer { height: 32px; }
+
+  /* LEVEL UP OVERLAY */
+  .levelup-overlay {
+    position: fixed; inset: 0; background: rgba(26,10,0,0.85);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 10000; opacity: 0; pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  .levelup-overlay.show { opacity: 1; pointer-events: auto; }
+  .levelup-box {
+    background: var(--deep2); border: 2px solid var(--gold);
+    border-radius: 24px; padding: 40px 48px; text-align: center;
+    transform: scale(0.8); transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
+    box-shadow: 0 0 60px rgba(255,184,0,0.4);
+  }
+  .levelup-overlay.show .levelup-box { transform: scale(1); }
+  .levelup-emoji { font-size: 60px; display: block; margin-bottom: 16px; }
+  .levelup-title { font-size: 32px; font-weight: 800; color: var(--gold); }
+  .levelup-sub { font-size: 15px; color: rgba(255,255,255,0.6); margin-top: 6px; }
+  .levelup-btn {
+    margin-top: 24px; padding: 12px 32px; background: var(--saffron);
+    color: #fff; border: none; border-radius: 100px; font-size: 14px;
+    font-weight: 700; cursor: pointer; font-family: 'Syne', sans-serif;
+    transition: transform 0.15s;
+  }
+  .levelup-btn:hover { transform: scale(1.05); }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--saffron-light); border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<div id="particles"></div>
+
+<div class="levelup-overlay" id="levelupOverlay">
+  <div class="levelup-box">
+    <span class="levelup-emoji">🏆</span>
+    <div class="levelup-title" id="levelupTitle">Level Up!</div>
+    <div class="levelup-sub" id="levelupSub">You've reached Level 2</div>
+    <button class="levelup-btn" onclick="closeLevelUp()">Keep Going! 🔥</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<header>
+  <div class="radhe-banner">🕉 Radhe Radhe 🕉</div>
+  <h1>Daily <span>Sadhana</span> Tracker</h1>
+  <div class="tagline">Complete tasks · Earn XP · Build streaks</div>
+</header>
+
+<div class="stats-bar" id="statsBar">
+  <div class="stat-pill">
+    <span class="icon">🔥</span>
+    <span class="label">Streak</span>
+    <span class="value saffron" id="statStreak">0</span>
+  </div>
+  <div class="stat-pill">
+    <span class="icon">⚡</span>
+    <span class="label">Total XP</span>
+    <span class="value gold" id="statXP">0</span>
+  </div>
+  <div class="stat-pill">
+    <span class="icon">🎯</span>
+    <span class="label">Level</span>
+    <span class="value" id="statLevel">1</span>
+  </div>
+  <div class="stat-pill">
+    <span class="icon">✅</span>
+    <span class="label">Done Today</span>
+    <span class="value green" id="statDone">0</span>
+  </div>
+</div>
+
+<div class="xp-section">
+  <div class="xp-label">
+    <span id="xpLevelLabel">Level 1</span>
+    <span id="xpProgress">0 / 100 XP</span>
+  </div>
+  <div class="xp-track"><div class="xp-fill" id="xpFill" style="width:0%"></div></div>
+</div>
+
+<div class="day-switcher" id="daySwitcher"></div>
+
+<div class="main" id="mainContent"></div>
+
+<script>
+const SCHEDULE_A = ['MONDAY','WEDNESDAY','FRIDAY','SUNDAY'];
+const SCHEDULE_B = ['TUESDAY','THURSDAY','SATURDAY'];
+const DAYS = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+const FULL_DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+const TASKS_A = [
+  {time:'6:00 AM',name:'Wake Up',cat:'wellness',xp:5},
+  {time:'6:00–6:20 AM',name:'Freshen Up',cat:'wellness',xp:5},
+  {time:'6:20–6:40 AM',name:'Yoga & Neck Exercise / Brisk Walk',cat:'wellness',xp:15},
+  {time:'6:40–8:00 AM',name:'Learn Power BI',cat:'learn',xp:40},
+  {time:'8:00–9:00 AM',name:'BPBR — Bath, Pray, Breakfast & Rest',cat:'prayer',xp:10},
+  {time:'9:00 AM–12:00 PM',name:'Practice / Learn SQL till Perfection',cat:'practice',xp:60},
+  {time:'12:00–12:30 PM',name:'Pray, Rest and Eat',cat:'prayer',xp:10},
+  {time:'12:30–3:30 PM',name:'DSA — Learn & Practice',cat:'learn',xp:60},
+  {time:'3:30–4:00 PM',name:'Lunch and Rest',cat:'rest',xp:5},
+  {time:'4:00–5:30 PM',name:'DSA — Practice',cat:'practice',xp:40},
+  {time:'5:30–7:30 PM',name:'Python for Data Analytics — Learn & Practice',cat:'practice',xp:50},
+  {time:'7:30–8:00 PM',name:'RDR — Dinner, Rest & Reset',cat:'rest',xp:10},
+  {time:'8:30–9:00 PM',name:'SQL Practice',cat:'practice',xp:20},
+  {time:'9:00–9:40 PM',name:'Power BI Practice',cat:'practice',xp:20},
+  {time:'9:40–10:00 PM',name:'Brisk No-Screen Walking',cat:'wellness',xp:15},
+  {time:'10:00 PM',name:'Sleep 😴',cat:'rest',xp:5},
+];
+const TASKS_B = [
+  {time:'6:00 AM',name:'Wake Up',cat:'wellness',xp:5},
+  {time:'6:00–6:20 AM',name:'Freshen Up',cat:'wellness',xp:5},
+  {time:'6:20–6:40 AM',name:'Yoga & Neck Exercise / Brisk Walk',cat:'wellness',xp:15},
+  {time:'6:40–8:00 AM',name:'Learn Excel',cat:'learn',xp:40},
+  {time:'8:00–9:00 AM',name:'BPBR — Bath, Pray, Breakfast & Rest',cat:'prayer',xp:10},
+  {time:'9:00 AM–12:00 PM',name:'Practice / Learn SQL till Perfection',cat:'practice',xp:60},
+  {time:'12:00–12:30 PM',name:'Pray, Rest and Eat',cat:'prayer',xp:10},
+  {time:'12:30–3:30 PM',name:'DSA — Learn & Practice',cat:'learn',xp:60},
+  {time:'3:30–4:00 PM',name:'Lunch and Rest',cat:'rest',xp:5},
+  {time:'4:00–5:30 PM',name:'DSA — Practice',cat:'practice',xp:40},
+  {time:'5:30–7:30 PM',name:'Python for Data Analytics — Learn & Practice',cat:'practice',xp:50},
+  {time:'8:30–9:00 PM',name:'SQL Practice',cat:'practice',xp:20},
+  {time:'9:00–9:40 PM',name:'Excel Practice',cat:'practice',xp:20},
+  {time:'9:40–10:00 PM',name:'Brisk No-Screen Walking',cat:'wellness',xp:15},
+  {time:'10:00 PM',name:'Sleep 😴',cat:'rest',xp:5},
+];
+
+const QUOTES = [
+  {q:'Do your duty without attachment to results.', src:'Bhagavad Gita 2.47'},
+  {q:'You have the right to perform your prescribed duties, but you are not entitled to the fruits of your actions.', src:'Bhagavad Gita 2.47'},
+  {q:'The soul is never born nor dies at any time. It has not come into being, does not come into being, and will not come into being.', src:'Bhagavad Gita 2.20'},
+  {q:'Arise, awake, and stop not until the goal is reached.', src:'Swami Vivekananda'},
+  {q:'By constant effort the man of wisdom wins the prize that is eternal.', src:'Mahabharata'},
+];
+
+const XP_PER_LEVEL = [0,100,250,450,700,1000,1400,1900,2500,3200,4000];
+const MESSAGES = [
+  '🔥 Blazing! Keep it up!',
+  '⚡ Electrifying work!',
+  '🌟 You\'re on fire!',
+  '💪 Discipline is destiny!',
+  '🏹 Arrow released — no turning back!',
+  '🕉 Radhe Radhe! Magnificent!',
+  '✨ The universe is watching!',
+  '🦁 Roar of a champion!',
+];
+
+let state = {};
+
+function loadState() {
+  try { state = JSON.parse(localStorage.getItem('radhe_tracker') || '{}'); } catch(e) { state = {}; }
+  if (!state.tasks) state.tasks = {};
+  if (!state.totalXP) state.totalXP = 0;
+  if (!state.streak) state.streak = 0;
+  if (!state.lastDate) state.lastDate = '';
+  if (!state.level) state.level = 1;
+}
+function saveState() {
+  localStorage.setItem('radhe_tracker', JSON.stringify(state));
+}
+
+function todayKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+}
+function dateKey(date) {
+  return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+}
+
+function getDayTasks(dayOfWeek) {
+  const name = FULL_DAYS[dayOfWeek].toUpperCase();
+  return SCHEDULE_A.includes(name) ? TASKS_A : TASKS_B;
+}
+
+function getScheduleType(dayOfWeek) {
+  const name = FULL_DAYS[dayOfWeek].toUpperCase();
+  return SCHEDULE_A.includes(name) ? 'Power BI Day' : 'Excel Day';
+}
+
+let selectedDate = new Date();
+
+function buildDaySwitcher() {
+  const el = document.getElementById('daySwitcher');
+  el.innerHTML = '';
+  const today = new Date();
+  for (let i = -3; i <= 3; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() + i);
+    const key = dateKey(d);
+    const tasks = getDayTasks(d.getDay());
+    const done = tasks.filter((_,idx) => state.tasks[key] && state.tasks[key][idx]).length;
+    const btn = document.createElement('div');
+    btn.className = 'day-btn' + (done > 0 && done < tasks.length ? ' has-progress' : '') + (done === tasks.length ? ' complete' : '') + (dateKey(d) === dateKey(selectedDate) ? ' active' : '');
+    btn.innerHTML = `<div class="day-name">${DAYS[d.getDay()]}</div><div class="day-num">${d.getDate()}</div><div class="day-dot"></div>`;
+    btn.onclick = () => { selectedDate = d; buildDaySwitcher(); renderDay(); };
+    el.appendChild(btn);
+  }
+}
+
+function renderDay() {
+  const key = dateKey(selectedDate);
+  const tasks = getDayTasks(selectedDate.getDay());
+  const taskState = state.tasks[key] || {};
+  const doneCount = Object.values(taskState).filter(Boolean).length;
+  const totalXPDay = tasks.filter((_,i) => taskState[i]).reduce((a,t) => a+t.xp, 0);
+
+  const circumference = 2 * Math.PI * 26;
+  const pct = tasks.length ? doneCount / tasks.length : 0;
+  const offset = circumference * (1 - pct);
+
+  const quote = QUOTES[selectedDate.getDay() % QUOTES.length];
+  const schedType = getScheduleType(selectedDate.getDay());
+
+  const isToday = dateKey(selectedDate) === dateKey(new Date());
+
+  let html = `
+    <div class="day-heading">
+      <h2>${FULL_DAYS[selectedDate.getDay()]}${isToday ? ' <span style="color:var(--saffron);font-size:13px;">— Today</span>' : ''}</h2>
+      <div class="schedule-type">${schedType}</div>
+    </div>
+    <div class="quote-card">
+      <blockquote>${quote.q}</blockquote>
+      <cite>— ${quote.src}</cite>
+    </div>
+    <div class="progress-ring-wrap">
+      <svg class="ring-svg" viewBox="0 0 64 64">
+        <circle class="ring-bg" cx="32" cy="32" r="26"/>
+        <circle class="ring-fill" cx="32" cy="32" r="26"
+          stroke-dasharray="${circumference}"
+          stroke-dashoffset="${offset}"
+          id="ringFill"/>
+        <text class="ring-text" x="32" y="32">${Math.round(pct*100)}%</text>
+      </svg>
+      <div class="ring-info">
+        <div class="completed-count">${doneCount}<span style="font-size:14px;color:rgba(255,255,255,0.4);font-weight:400;"> / ${tasks.length}</span></div>
+        <h3>Tasks Completed</h3>
+        <p>+${totalXPDay} XP earned today</p>
+      </div>
+    </div>`;
+
+  tasks.forEach((task, idx) => {
+    const done = !!taskState[idx];
+    html += `
+      <div class="time-block">
+        <div class="task-card cat-${task.cat}${done?' done':''}" onclick="toggleTask('${key}',${idx},${task.xp})" data-idx="${idx}">
+          <div class="task-check"><span class="check-icon">✓</span></div>
+          <div class="task-body">
+            <div class="task-time">${task.time}</div>
+            <div class="task-name">${task.name}</div>
+            <span class="task-tag tag-${task.cat}">${task.cat}</span>
+          </div>
+          <div class="task-xp">+${task.xp}</div>
+        </div>
+      </div>`;
+  });
+
+  html += '<div class="bottom-spacer"></div>';
+  document.getElementById('mainContent').innerHTML = html;
+
+  updateStats();
+}
+
+function toggleTask(key, idx, xp) {
+  if (!state.tasks[key]) state.tasks[key] = {};
+  const wasDone = !!state.tasks[key][idx];
+  state.tasks[key][idx] = !wasDone;
+
+  if (!wasDone) {
+    state.totalXP += xp;
+    checkLevelUp();
+    spawnParticles(event.clientX, event.clientY);
+    showToast(MESSAGES[Math.floor(Math.random() * MESSAGES.length)]);
+  } else {
+    state.totalXP = Math.max(0, state.totalXP - xp);
+  }
+
+  updateStreak();
+  saveState();
+  buildDaySwitcher();
+  renderDay();
+}
+
+function updateStreak() {
+  const today = dateKey(new Date());
+  const yesterday = (() => { const d=new Date(); d.setDate(d.getDate()-1); return dateKey(d); })();
+  const tasks = getDayTasks(new Date().getDay());
+  const todayDone = state.tasks[today] ? Object.values(state.tasks[today]).filter(Boolean).length : 0;
+  if (todayDone === tasks.length) {
+    if (state.lastDate === yesterday || state.lastDate === today) {
+      if (state.lastDate !== today) state.streak++;
+    } else {
+      state.streak = 1;
+    }
+    state.lastDate = today;
+  }
+}
+
+function updateStats() {
+  document.getElementById('statStreak').textContent = state.streak;
+  document.getElementById('statXP').textContent = state.totalXP;
+  document.getElementById('statLevel').textContent = state.level;
+
+  const key = dateKey(selectedDate);
+  const tasks = getDayTasks(selectedDate.getDay());
+  const done = state.tasks[key] ? Object.values(state.tasks[key]).filter(Boolean).length : 0;
+  document.getElementById('statDone').textContent = done;
+
+  const lvl = state.level;
+  const thisLvlXP = XP_PER_LEVEL[lvl-1] || 0;
+  const nextLvlXP = XP_PER_LEVEL[lvl] || (thisLvlXP + 500);
+  const progress = ((state.totalXP - thisLvlXP) / (nextLvlXP - thisLvlXP) * 100);
+  document.getElementById('xpFill').style.width = Math.min(100, Math.max(0, progress)) + '%';
+  document.getElementById('xpLevelLabel').textContent = 'Level ' + lvl;
+  document.getElementById('xpProgress').textContent = `${state.totalXP} / ${nextLvlXP} XP`;
+}
+
+function checkLevelUp() {
+  const nextThreshold = XP_PER_LEVEL[state.level];
+  if (nextThreshold && state.totalXP >= nextThreshold) {
+    state.level++;
+    saveState();
+    showLevelUp();
+  }
+}
+
+function showLevelUp() {
+  document.getElementById('levelupTitle').textContent = 'Level ' + state.level + ' Unlocked!';
+  document.getElementById('levelupSub').textContent = 'You\'ve reached Level ' + state.level + ' — Radhe Radhe! 🕉';
+  const overlay = document.getElementById('levelupOverlay');
+  overlay.classList.add('show');
+  for (let i = 0; i < 20; i++) {
+    setTimeout(() => spawnParticles(window.innerWidth/2, window.innerHeight/2), i*80);
+  }
+}
+
+function closeLevelUp() {
+  document.getElementById('levelupOverlay').classList.remove('show');
+}
+
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+const COLORS = ['#FF6B00','#FFB800','#FF3E8F','#22A66B','#8B5CF6','#F43F5E'];
+function spawnParticles(x, y) {
+  const container = document.getElementById('particles');
+  for (let i = 0; i < 12; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const angle = (i / 12) * Math.PI * 2;
+    const dist = 30 + Math.random() * 50;
+    const px = x + Math.cos(angle) * dist;
+    const py = y + Math.sin(angle) * dist;
+    p.style.cssText = `left:${px}px;top:${py}px;background:${COLORS[i%COLORS.length]};animation-delay:${Math.random()*0.2}s`;
+    container.appendChild(p);
+    setTimeout(() => p.remove(), 1500);
+  }
+}
+
+loadState();
+buildDaySwitcher();
+renderDay();
+</script>
+</body>
+</html>
